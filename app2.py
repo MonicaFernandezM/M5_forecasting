@@ -29,7 +29,6 @@ model = joblib.load("demand_forecasting_model.pkl")
 
 st.sidebar.header("Filters")
 
-# STORE
 store = st.sidebar.selectbox(
     "Store",
     df["store_id"].unique()
@@ -37,7 +36,6 @@ store = st.sidebar.selectbox(
 
 df = df[df["store_id"] == store]
 
-# CATEGORY
 category = st.sidebar.selectbox(
     "Category",
     sorted(df["cat_id"].unique())
@@ -73,10 +71,11 @@ df = df[
 # TABS
 # --------------------------------------------------
 
-tab1, tab2, tab3 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     "Dataset Overview",
     "Demand Forecast",
-    "Inventory Simulation"
+    "Inventory Simulation",
+    "Critical Products"
 ])
 
 # ==================================================
@@ -222,33 +221,28 @@ with tab3:
 
     st.header("Inventory Policy Simulation")
 
-    initial_inventory = st.slider(
-        "Initial Inventory",
-        0,100,30
+    item = st.selectbox(
+        "Select Product for Inventory",
+        sorted(df["id"].unique())
     )
 
-    lead_time = st.slider(
-        "Lead Time (days)",
-        1,10,3
-    )
+    item_data = df[df["id"] == item].sort_values("date")
 
-    service_level = st.slider(
-        "Service Level (z)",
-        1.0,2.5,1.65
-    )
+    initial_inventory = st.slider("Initial Inventory",0,100,30)
+    lead_time = st.slider("Lead Time",1,10,3)
+    service_level = st.slider("Service Level",1.0,2.5,1.65)
 
-    demand_mean = df["sales"].mean()
-    demand_std = df["sales"].std()
+    demand_mean = item_data["sales"].mean()
+    demand_std = item_data["sales"].std()
 
     safety_stock = service_level * demand_std * np.sqrt(lead_time)
-
     reorder_point = demand_mean * lead_time + safety_stock
 
+    st.write("Average Demand:", round(demand_mean,2))
     st.write("Safety Stock:", round(safety_stock,2))
     st.write("Reorder Point:", round(reorder_point,2))
 
     inventory = initial_inventory
-
     days = 30
     inventory_history = []
 
@@ -263,16 +257,68 @@ with tab3:
 
         inventory_history.append(inventory)
 
-    st.subheader("Inventory Simulation")
+    fig, ax = plt.subplots(figsize=(7,3))
 
-    fig, ax = plt.subplots(figsize=(6,3))
-    ax.plot(inventory_history, color="#5a88b2", linewidth=2, label="Inventory")
-    ax.axhline(reorder_point, linestyle="--", color="#ff0e26")
+    ax.plot(inventory_history,label="Inventory")
+
+    ax.axhline(reorder_point,linestyle="--",label="Reorder Point")
+
+    ax.axhline(safety_stock,linestyle=":",label="Safety Stock")
+
+    ax.legend()
 
     ax.set_xlabel("Day")
     ax.set_ylabel("Inventory")
 
-    ax.legend()
-    ax.grid(alpha=0.3)
+    st.pyplot(fig)
+
+# ===================================================
+# TAB 4 — CRITICAL PRODUCTS
+# ===================================================
+
+with tab4:
+
+    st.header("Critical Products (Demand Variability)")
+
+    # Calcular estadísticas por producto
+    item_stats = (
+        df.groupby("id")["sales"]
+        .agg(["mean","std"])
+        .reset_index()
+    )
+
+    item_stats.rename(columns={
+        "mean":"avg_demand",
+        "std":"demand_std"
+    }, inplace=True)
+
+    # Coeficiente de variación
+    item_stats["cv"] = item_stats["demand_std"] / item_stats["avg_demand"]
+
+    # extraer solo el producto base (sin tienda)
+    item_stats["product"] = item_stats["id"].str.split("_CA").str[0]
+
+    # productos más volátiles
+    top_critical = item_stats.sort_values(
+        "cv",
+        ascending=False
+    ).head(10)
+
+    st.subheader("Top Volatile Products")
+
+    st.dataframe(top_critical)
+
+    # gráfico horizontal (mejor para leer)
+    fig, ax = plt.subplots(figsize=(7,4))
+
+    ax.barh(
+        top_critical["product"],
+        top_critical["cv"]
+    )
+
+    ax.set_xlabel("Demand Variability (CV)")
+    ax.set_title("Most Volatile Products")
+
+    ax.invert_yaxis()
 
     st.pyplot(fig)
