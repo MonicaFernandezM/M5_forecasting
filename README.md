@@ -243,4 +243,4 @@ Si deseas mejorar el análisis o añadir nuevas visualizaciones:
 
 ## Autor
 
-Mónica María Fernández
+Mónica María Fernández Mirás
