@@ -66,7 +66,7 @@ El análisis está organizado por secciones para facilitar la comprensión del f
 
 ## Dataset
 
-Los datos provienen del dataset [M5 Forecasting](https://www.kaggle.com/datasets/aryayadav0513/m5-forecasting-accuracy)(ventas de Walmart).
+Los datos provienen del dataset [M5 Forecasting](https://www.kaggle.com/datasets/aryayadav0513/m5-forecasting-accuracy) (ventas de Walmart).
 
 Incluye:
 * Ventas diarias por producto
