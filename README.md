@@ -102,7 +102,7 @@ El análisis inicial permitió identificar varios patrones importantes.
 - Demanda Intermitente:
 Una gran proporción de observaciones presenta ventas iguales a cero, lo que indica demanda irregular.
 
-![Demanda Intermitente](imagenes/intermittent_demand.png)
+![Demanda Intermitente](imagenes/Intermittent_demand.png)
 
 - Tendencia de Ventas:
 Se analiza la evolución de las ventas diarias a lo largo de cinco años.
@@ -141,7 +141,7 @@ Estas variables permiten que el modelo capture estacionalidad y patrones tempora
 ## Predicción de demanda
 Esta predicción de valores de ventas es para cada producto, donde vemos la predicción para la siguiente semana a la hora de las posibles ventas.
 
-![Predicción de ventas](imagenes/demand_forecast.png)
+![Predicción de ventas](imagenes/demand_forescat.png)
 
 ## Modelos de Forecasting
 Se evaluaron varios modelos de machine learning:
@@ -183,7 +183,7 @@ donde:
 
 Los productos con mayor CV requieren mayor stock de seguridad.
 
-![Productos con alta Volatilidad](imagenes/volatility_productos.png)
+![Productos con alta Volatilidad](imagenes/volatility_products.png)
 
 ## Dashboard Interactivo
 Se desarrolló un dashboard utilizando Streamlit.
