@@ -98,7 +98,7 @@ with tab1:
 
     fig, ax = plt.subplots(figsize=(8,3))
 
-    ax.plot(daily.index, daily.values, color="#457cb0", alpha=0.6, label="Ventas Diarias")
+    ax.plot(daily.index, daily.values, color="#8073AC", alpha=0.6, label="Ventas Diarias")
     ax.plot(trend.index, trend.values, color="#ff0e26", linewidth=2, label="Tendencia")
     ax.set_xlabel("Mes")
     ax.set_ylabel("Ventas")
@@ -133,7 +133,7 @@ with tab1:
 
     fig, ax = plt.subplots(figsize=(7,4))
 
-    sns.heatmap(pivot, cmap="Blues", ax=ax)
+    sns.heatmap(pivot, cmap="Purples", ax=ax)
 
     ax.set_yticklabels(days)
     ax.set_xticklabels(months)
@@ -169,7 +169,7 @@ with tab2:
 
     fig, ax = plt.subplots(figsize=(8,3))
 
-    ax.plot(weekly["date"], weekly["sales"], color="#457cb0", alpha=0.4, label="Ventas Semanales")
+    ax.plot(weekly["date"], weekly["sales"], color="#8073AC", alpha=0.4, label="Ventas Semanales")
     ax.plot(weekly["date"], weekly["trend"], color="#ff0e26", linewidth=2, label="Tendencia")
     
     ax.legend()
@@ -264,7 +264,7 @@ with tab3:
     fig, ax = plt.subplots(figsize=(8,4))
 
     # línea inventario
-    ax.plot(inventory_history, marker="o", label="Nivel de Inventario")
+    ax.plot(inventory_history, marker="o", color= "#8073AC" ,label="Nivel de Inventario")
 
     # líneas de referencia
     ax.axhline(reorder_point, linestyle="--", color="red", label="Punto de reposición")
@@ -322,7 +322,8 @@ with tab4:
 
     ax.barh(
         top_critical["product"],
-        top_critical["cv"]
+        top_critical["cv"], 
+        color= "#8073AC"
     )
 
     ax.set_xlabel("Variabilidad de Demanda (CV)")
