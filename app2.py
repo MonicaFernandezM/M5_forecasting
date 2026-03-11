@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
 import plotly.express as px
+import math 
 
 st.set_page_config(page_title="Retail Demand Forecasting", layout="wide")
 
@@ -91,6 +92,10 @@ with tab1:
     col3.metric("Tienda", store)
     col4.metric("Ventas medias diarias", round(df["sales"].mean(),2))
 
+    # --------------------------------------------------
+    # TENDENCIA DE VENTAS
+    # --------------------------------------------------
+
     st.subheader("Tendencia de Ventas")
 
     daily = df.groupby("date")["sales"].sum()
@@ -100,12 +105,17 @@ with tab1:
 
     ax.plot(daily.index, daily.values, color="#8073AC", alpha=0.6, label="Ventas Diarias")
     ax.plot(trend.index, trend.values, color="#ff0e26", linewidth=2, label="Tendencia")
-    ax.set_xlabel("Mes")
+
+    ax.set_xlabel("Años")
     ax.set_ylabel("Ventas")
 
     ax.legend()
 
     st.pyplot(fig)
+
+    # --------------------------------------------------
+    # PRODUCTOS CON MÁS VENTAS
+    # --------------------------------------------------
 
     st.subheader("Productos con Más Ventas")
 
@@ -119,26 +129,30 @@ with tab1:
 
     st.dataframe(top_items)
 
-    st.subheader("Mapa de Estacionalidad")
+    # --------------------------------------------------
+    # VENTAS PROMEDIO POR DÍA DE LA SEMANA
+    # --------------------------------------------------
 
-    pivot = df.pivot_table(
-        values="sales",
-        index="dayofweek",
-        columns="month",
-        aggfunc="mean"
+    st.subheader("Ventas promedio por día de la semana")
+
+    sales_by_day = (
+        df.groupby("dayofweek")["sales"]
+        .mean()
+        .reset_index()
     )
 
     days = ["Lun","Mar","Miér","Jue","Vie","Sab","Dom"]
-    months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
+    sales_by_day["day"] = days
 
-    fig, ax = plt.subplots(figsize=(7,4))
+    fig, ax = plt.subplots()
 
-    sns.heatmap(pivot, cmap="Purples", ax=ax)
+    ax.bar(sales_by_day["day"], sales_by_day["sales"], color="#8073AC")
 
-    ax.set_yticklabels(days)
-    ax.set_xticklabels(months)
-    ax.set_xlabel("Mes")
-    ax.set_ylabel("Día de la Semana")
+    ax.set_title("Ventas promedio por día de la semana")
+    ax.set_xlabel("Día")
+    ax.set_ylabel("Ventas promedio")
+
+    ax.grid(axis="y", alpha=0.3)
 
     st.pyplot(fig)
 
@@ -157,26 +171,9 @@ with tab2:
 
     item_data = df[df["item_id"] == item].sort_values("date")
 
-    weekly = (
-        item_data
-        .set_index("date")["sales"]
-        .resample("W")
-        .sum()
-        .reset_index()
-    )
-
-    weekly["trend"] = weekly["sales"].rolling(8).mean()
-
-    fig, ax = plt.subplots(figsize=(8,3))
-
-    ax.plot(weekly["date"], weekly["sales"], color="#8073AC", alpha=0.4, label="Ventas Semanales")
-    ax.plot(weekly["date"], weekly["trend"], color="#ff0e26", linewidth=2, label="Tendencia")
-    
-    ax.legend()
-
-    st.pyplot(fig)
-
-    st.subheader("Predicción de Demanda para Mañana")
+    # -----------------------------
+    # PREDICCIÓN
+    # -----------------------------
 
     latest = item_data.iloc[-1]
 
@@ -194,9 +191,50 @@ with tab2:
     ]]
 
     forecast = model.predict(features)[0]
+    forecast_units = math.ceil(forecast)
+    prediction_date = item_data["date"].max() + pd.Timedelta(days=1)
 
-    st.metric("Demanda prevista para mañana", round(forecast,2))
 
+    # -----------------------------
+    # DATOS SEMANALES
+    # -----------------------------
+
+    weekly = (
+        item_data
+        .set_index("date")["sales"]
+        .resample("W")
+        .sum()
+        .reset_index()
+    )
+
+    weekly["trend"] = weekly["sales"].rolling(8).mean()
+
+    next_day = weekly["date"].max() + pd.Timedelta(days=7)
+
+    # -----------------------------
+    # GRÁFICO
+    # -----------------------------
+
+    fig, ax = plt.subplots(figsize=(8,3))
+
+    ax.plot(weekly["date"], weekly["sales"], color="#8073AC", alpha=0.4, label="Ventas Semanales")
+    ax.plot(weekly["date"], weekly["trend"], color="#ff0e26", linewidth=2, label="Tendencia")
+
+    ax.scatter(next_day, forecast_units, color="green", s=40, label="Predicción")
+
+    ax.legend()
+
+    st.pyplot(fig)
+
+    # -----------------------------
+    # MÉTRICA
+    # -----------------------------
+
+    st.subheader("Predicción de Demanda para Mañana basada en el histórico")
+    st.metric(
+        f"Demanda prevista para {prediction_date.date()}",
+        forecast_units
+    )
 # ==================================================
 # TAB 3 — INVENTORY SIMULATION
 # ==================================================
@@ -231,6 +269,8 @@ with tab3:
 
     safety_stock = z * demand_std * np.sqrt(lead_time)
     reorder_point = demand_mean * lead_time + safety_stock
+    safety_stock = math.ceil(safety_stock)
+    reorder_point = math.ceil(reorder_point)    
 
     st.write("Demanda media:", round(demand_mean,2))
     st.write("Stock de seguridad:", round(safety_stock,2))
